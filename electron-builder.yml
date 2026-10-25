@@ -1,0 +1,31 @@
+appId: es.buhoai.openisy4500
+productName: Open ISY4500 Customizer
+copyright: © 2026 Buho Corps Systems
+directories:
+  output: dist
+  buildResources: build
+files:
+  - out/**
+  - lib/**
+  - package.json
+  - build/icon.png
+asarUnpack:
+  # node-hid es un módulo nativo (.node): tiene que ir fuera del asar.
+  - node_modules/node-hid/**
+  - node_modules/pkg-prebuilds/**
+# El CLI (bin/isy4500.mjs) se usa desde el repo: npm link o node bin/isy4500.mjs.
+win:
+  icon: build/icon.png
+  executableName: OpenISY4500Customizer
+  legalTrademarks: Buho Corps Systems
+  target:
+    - target: nsis
+      arch: [x64]
+  artifactName: Open-ISY4500-Customizer-${version}-${arch}.${ext}
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Open ISY4500 Customizer

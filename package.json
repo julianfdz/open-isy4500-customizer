@@ -1,0 +1,40 @@
+{
+  "name": "open-isy4500-customizer",
+  "productName": "Open ISY4500 Customizer",
+  "version": "0.1.0",
+  "description": "Software libre para la iluminación RGB del ratón ISY IGM 4500 WT (USB 30FA:1040, chip Instant). Electron + node-hid, con CLI para agentes de IA. Buho Corps Systems.",
+  "author": {
+    "name": "Buho Corps Systems"
+  },
+  "license": "MIT",
+  "private": true,
+  "main": "./out/main/index.js",
+  "bin": {
+    "isy4500": "bin/isy4500.mjs"
+  },
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "start": "electron-vite preview",
+    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
+    "dist": "electron-vite build && electron-builder --win",
+    "dist:dir": "electron-vite build && electron-builder --win --dir"
+  },
+  "dependencies": {
+    "node-hid": "^3.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "electron": "^44.9.0",
+    "electron-builder": "^26.15.3",
+    "electron-vite": "^6.0.0",
+    "lucide-react": "^1.59.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4"
+  }
+}

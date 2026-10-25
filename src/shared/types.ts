@@ -1,0 +1,33 @@
+import type { LightConfig } from '../../lib/protocol.mjs'
+
+export type { LightConfig, ModeDef, Preset } from '../../lib/protocol.mjs'
+
+export interface Device {
+  connected: boolean
+  product?: string
+  manufacturer?: string
+  release?: number
+  interfaces?: { interface: number; usagePage: number; usage: number }[]
+}
+
+export interface Saved {
+  config: LightConfig
+  reapplyOnStart: boolean
+}
+
+export type ApplyResult = { ok: true; packets: string[] } | { ok: false; error: string }
+
+/** Lo que llega del ratón: nivel de DPI o un informe sin interpretar. */
+export type MouseEvent = { type: 'dpi'; level: number; at: number } | { type: 'raw'; hex: string; at: number }
+
+export interface Api {
+  device(): Promise<Device>
+  saved(): Promise<Saved>
+  save(s: Saved): Promise<void>
+  apply(config: LightConfig): Promise<ApplyResult>
+  readState(): Promise<string | null>
+  appInfo(): Promise<{ version: string; cli: string }>
+  onDevice(cb: (d: Device) => void): () => void
+  onMouse(cb: (e: MouseEvent) => void): () => void
+  onSaved(cb: (s: Saved) => void): () => void
+}
