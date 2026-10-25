@@ -35,3 +35,9 @@ export interface Preset {
   config: Partial<LightConfig>
 }
 export const PRESETS: Preset[]
+export const DPI_BLOCK: number
+export const DPI_CODES: number[]
+export const FACTORY_DPI: number[]
+export function dpiOf(code: number): number
+export function decodeDpi(block: ArrayLike<number>): number[]
+export function encodeDpi(block: ArrayLike<number>, codes: number[]): number[]

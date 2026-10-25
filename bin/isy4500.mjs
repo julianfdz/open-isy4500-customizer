@@ -21,6 +21,11 @@ const HELP = `isy4500 · Open ISY4500 Customizer (ratón ISY IGM 4500 WT, USB 30
   isy4500 preset <id>                 Estilo predefinido (isy4500 presets para verlos).
   isy4500 off                         Apaga la luz.
   isy4500 modes | presets             Lista modos o estilos.
+  isy4500 dpi                         DPI de cada nivel guardado en el ratón (solo lectura).
+  isy4500 dpi <v1> … <v6>             Graba el DPI de los 6 niveles (200-4800, de 200 en 200, sin 2200).
+  isy4500 dpi <valor> --level N       Graba solo el nivel N (1-6).
+  isy4500 dpi factory                 Vuelve a los valores de fábrica.
+  isy4500 level <N>                   Activa el nivel de DPI N (1-6) sin pulsar el botón.
   isy4500 listen [segundos]           Muestra el nivel de DPI al pulsar el botón (solo lectura).
   isy4500 skill                       Guía completa para agentes de IA.
 
@@ -117,6 +122,44 @@ try {
       const p = mouse.PRESETS.find((x) => x.id === rest[0])
       if (!p) throw new Error(`Estilo desconocido: ${rest[0]}. Estilos: ${mouse.PRESETS.map((x) => x.id).join(', ')}`)
       send({ ...mouse.DEFAULT_CONFIG, ...p.config })
+      break
+    }
+    case 'dpi': {
+      const cur = mouse.getDpi()
+      const show = (codes, active) => codes.map((c, i) => `  nivel ${i + 1}: ${String(mouse.dpiOf(c)).padStart(4)} DPI (código ${c})${i === active ? '  ← activo' : ''}`).join('\n')
+      const lvl = flag('level')
+      const vals = rest.filter((v, i, a) => v !== '--level' && a[i - 1] !== '--level')
+      if (!vals.length) {
+        out({ ...cur, dpi: cur.codes.map(mouse.dpiOf) }, `DPI guardado en el ratón (aprox. código × 200):
+${show(cur.codes, cur.active)}`)
+        break
+      }
+      const toCode = (v) => {
+        const c = Number(v) / 200
+        if (!mouse.DPI_CODES.includes(c)) throw new Error(`DPI no válido: ${v}. Válidos: ${mouse.DPI_CODES.map(mouse.dpiOf).join(', ')}`)
+        return c
+      }
+      let codes
+      if (vals[0] === 'factory') codes = mouse.FACTORY_DPI
+      else if (lvl !== undefined) codes = cur.codes.map((c, i) => (i === level(lvl) ? toCode(vals[0]) : c))
+      else if (vals.length === mouse.DPI_LEVELS) codes = vals.map(toCode)
+      else throw new Error(`Pasa ${mouse.DPI_LEVELS} valores, uno con --level N, o «factory».`)
+      if (dry) {
+        out({ dryRun: true, codes }, `Se grabaría:
+${show(codes, -1)}`)
+        break
+      }
+      const r = mouse.setDpi(codes)
+      // La recarga del ratón borra la luz puesta en RAM: se vuelve a mandar la guardada.
+      if (r.changed) mouse.apply(saved.config)
+      out({ ok: true, ...r }, r.changed ? `DPI grabado en el ratón:
+${show(r.codes, -1)}` : 'Sin cambios: el ratón ya tenía esos valores.')
+      break
+    }
+    case 'level': {
+      const r = mouse.setActiveLevel(level(rest[0]))
+      if (r.changed) mouse.apply(saved.config)
+      out({ ok: true, ...r }, `Nivel de DPI activo: ${r.active + 1} (${mouse.dpiOf(mouse.getDpi().codes[r.active])} DPI)`)
       break
     }
     case 'off':

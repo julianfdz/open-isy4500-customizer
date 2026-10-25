@@ -15,3 +15,12 @@ export function find(): MouseInfo | null
 export function apply(config: Partial<LightConfig>): string[]
 export function readState(): string
 export function listen(cb: (e: MouseEvent) => void, onError?: (e: Error) => void): () => void
+export interface DpiState {
+  codes: number[]
+  active: number
+  enabled: number
+  block: string
+}
+export function getDpi(): DpiState
+export function setDpi(codes: number[], opts?: { applyNow?: boolean }): { changed: boolean; codes: number[]; before?: string; after?: string }
+export function setActiveLevel(level: number): { changed: boolean; active: number }

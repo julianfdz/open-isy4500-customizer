@@ -124,7 +124,11 @@ label.check { display: flex; gap: 8px; align-items: center; font-size: 12.5px; c
 /* DPI */
 .dpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .dpi { border: 1px solid var(--g3); padding: 12px; display: flex; flex-direction: column; gap: 8px; position: relative; }
-.dpi.live { border-color: var(--fg); box-shadow: 4px 4px 0 var(--fg); }
+.dpi { cursor: pointer; }
+.dpi:hover { border-color: var(--fg); }
+.dpi.live { border-color: var(--fg); box-shadow: 4px 4px 0 var(--fg); cursor: default; }
+.dpi:not(.live) .live-tag { opacity: 0; }
+.dpi:not(.live):hover .live-tag { opacity: 1; }
 .dpi .n { font-size: 28px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
 .dpi .sw { height: 46px; border: 1px solid var(--fg); position: relative; }
 .dpi .sw input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
@@ -146,3 +150,4 @@ tr.hit td { background: #000; color: #fff; }
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-thumb { background: var(--g3); border: 2px solid transparent; background-clip: padding-box; }
+.dpisel { display: block; width: 100%; margin-top: 2px; border: 1px solid var(--fg); background: var(--bg); padding: 4px 6px; border-radius: 0; }

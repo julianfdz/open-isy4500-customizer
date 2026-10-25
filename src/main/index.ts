@@ -115,6 +115,36 @@ function registerIpc(): void {
       return null
     }
   })
+  ipcMain.handle('getDpi', () => {
+    try {
+      const d = mouse.getDpi()
+      return { ok: true, state: { codes: d.codes, active: d.active, enabled: d.enabled } }
+    } catch (e) {
+      return { ok: false, error: (e as Error).message }
+    }
+  })
+  // Graba el DPI en la memoria del ratón y lo aplica al momento; la recarga borra la luz, así que se vuelve a mandar.
+  ipcMain.handle('setDpi', (_e, codes: number[]) => {
+    try {
+      const r = mouse.setDpi(codes)
+      if (r.changed) apply(readSaved().config)
+      const d = mouse.getDpi()
+      return { ok: true, state: { codes: d.codes, active: d.active, enabled: d.enabled } }
+    } catch (e) {
+      return { ok: false, error: (e as Error).message }
+    }
+  })
+  // Activa un nivel de DPI sin pulsar el botón (graba el nivel y recarga; después se vuelve a mandar la luz).
+  ipcMain.handle('setLevel', (_e, level: number) => {
+    try {
+      const r = mouse.setActiveLevel(level)
+      if (r.changed) apply(readSaved().config)
+      const d = mouse.getDpi()
+      return { ok: true, state: { codes: d.codes, active: d.active, enabled: d.enabled } }
+    } catch (e) {
+      return { ok: false, error: (e as Error).message }
+    }
+  })
   ipcMain.handle('appInfo', () => ({
     version: app.getVersion(),
     cli: app.isPackaged ? join(dirname(process.execPath), 'cli') : join(app.getAppPath(), 'bin')

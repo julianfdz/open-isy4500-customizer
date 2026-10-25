@@ -15,6 +15,14 @@ export interface Saved {
   reapplyOnStart: boolean
 }
 
+export interface DpiState {
+  codes: number[]
+  active: number
+  enabled: number
+}
+
+export type DpiResult = { ok: true; state: DpiState } | { ok: false; error: string }
+
 export type ApplyResult = { ok: true; packets: string[] } | { ok: false; error: string }
 
 /** Lo que llega del ratón: nivel de DPI o un informe sin interpretar. */
@@ -26,6 +34,9 @@ export interface Api {
   save(s: Saved): Promise<void>
   apply(config: LightConfig): Promise<ApplyResult>
   readState(): Promise<string | null>
+  getDpi(): Promise<DpiResult>
+  setDpi(codes: number[]): Promise<DpiResult>
+  setLevel(level: number): Promise<DpiResult>
   appInfo(): Promise<{ version: string; cli: string }>
   onDevice(cb: (d: Device) => void): () => void
   onMouse(cb: (e: MouseEvent) => void): () => void

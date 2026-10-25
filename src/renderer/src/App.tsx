@@ -24,6 +24,7 @@ export interface Shared {
   busy: boolean
   error: string | null
   setDraft(c: LightConfig): void
+  setDpiLevel(level: number | null): void
   apply(c?: LightConfig): Promise<void>
 }
 
@@ -42,7 +43,11 @@ export default function App(): React.JSX.Element {
   const [applied, setApplied] = useState<LightConfig | null>(null)
 
   useEffect(() => {
-    void window.isy.device().then(setDevice)
+    void window.isy.device().then((d) => {
+      setDevice(d)
+      // Nivel activo leído de la memoria del ratón, sin esperar a que se pulse el botón.
+      if (d.connected) void window.isy.getDpi().then((r) => r.ok && setDpi(r.state.active))
+    })
     void window.isy.saved().then((s) => {
       setSaved(s)
       setDraft(s.config)
@@ -51,6 +56,7 @@ export default function App(): React.JSX.Element {
       window.isy.onDevice((d) => {
         setDevice(d)
         if (!d.connected) setDpi(null)
+        else void window.isy.getDpi().then((r) => r.ok && setDpi(r.state.active))
       }),
       window.isy.onMouse((e) => {
         if (e.type === 'dpi') setDpi(e.level)
@@ -80,7 +86,7 @@ export default function App(): React.JSX.Element {
     setLastApply(new Date().toLocaleTimeString())
   }, [draft])
 
-  const shared: Shared = { device, draft, applied, dpi, events, busy, error, setDraft, apply }
+  const shared: Shared = { device, draft, applied, dpi, events, busy, error, setDraft, setDpiLevel: setDpi, apply }
   const pending = !applied || !same(draft, applied)
 
   return (
@@ -118,7 +124,7 @@ export default function App(): React.JSX.Element {
       <footer className="status">
         <span><span className={`dot ${device.connected ? 'ok' : ''}`} />{device.connected ? 'Ratón conectado' : 'Ratón no encontrado'}</span>
         <span className="mono">USB 30FA:1040{device.product ? ` · ${device.product}` : ''}</span>
-        <span>DPI: {dpi === null ? '— (pulsa el botón de DPI)' : `nivel ${dpi + 1} de 6`}</span>
+        <span>DPI: {dpi === null ? '—' : `nivel ${dpi + 1} de 6`}</span>
         {pending && <span>{applied ? 'Cambios sin aplicar' : 'Pulsa «Aplicar» para mandar la configuración'}</span>}
         <span style={{ marginLeft: 'auto' }}>{lastApply ? `Aplicado ${lastApply}` : 'Sin cambios en esta sesión'}</span>
       </footer>

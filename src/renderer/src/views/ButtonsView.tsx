@@ -113,9 +113,9 @@ export function ButtonsView({ s }: { s: Shared }): React.JSX.Element {
           <section className="box soft">
             <h3>Reasignar botones</h3>
             <p className="small">
-              Cambiar lo que hace cada botón (macros, atajos) no está en el protocolo conocido de este chip, así que la app no lo ofrece todavía.
-              Si el ratón manda algún informe USB nuevo al pulsar un botón, aparece arriba como «sin identificar»: es la pista para seguir
-              investigando.
+              El mapa de botones ya está localizado en la memoria del ratón (gracias al software oficial de un ratón con el mismo chip),
+              pero aún falta traducir los códigos de cada función. Hasta tenerlo comprobado, la app no lo toca: un error ahí deja el ratón sin
+              clic izquierdo hasta restaurarlo.
             </p>
             {!s.device.connected && <p className="small" style={{ marginTop: 6 }}>Conecta el ratón para ver el botón DPI.</p>}
           </section>
