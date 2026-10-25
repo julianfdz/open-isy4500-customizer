@@ -1,24 +1,55 @@
 import { useEffect, useRef, useState } from 'react'
+import { BUTTONS, FACTORY_BUTTONS, FUNCTIONS, functionOf } from '../../../../lib/protocol.mjs'
 import type { Shared } from '@/App'
 
 type Btn = 'left' | 'right' | 'wheel' | 'up' | 'down' | 'back' | 'forward' | 'dpi'
 
-const ROWS: { id: Btn; name: string; does: string; how: string }[] = [
-  { id: 'left', name: 'Botón izquierdo', does: 'Clic principal', how: 'Windows' },
-  { id: 'right', name: 'Botón derecho', does: 'Menú contextual', how: 'Windows' },
-  { id: 'wheel', name: 'Clic de rueda', does: 'Clic central', how: 'Windows' },
-  { id: 'up', name: 'Rueda arriba', does: 'Desplazar arriba', how: 'Windows' },
-  { id: 'down', name: 'Rueda abajo', does: 'Desplazar abajo', how: 'Windows' },
-  { id: 'back', name: 'Lateral trasero', does: 'Atrás (si tu ratón lo tiene)', how: 'Windows' },
-  { id: 'forward', name: 'Lateral delantero', does: 'Adelante (si tu ratón lo tiene)', how: 'Windows' },
-  { id: 'dpi', name: 'Botón DPI', does: 'Siguiente nivel de DPI (6 niveles)', how: 'USB del ratón' }
+// idx = posición del botón en el mapa del ratón (BUTTONS); el giro de la rueda no se puede reasignar.
+const ROWS: { id: Btn; name: string; idx?: number; fixed?: string }[] = [
+  { id: 'left', name: 'Botón izquierdo', idx: 0 },
+  { id: 'right', name: 'Botón derecho', idx: 1 },
+  { id: 'wheel', name: 'Clic de rueda', idx: 2 },
+  { id: 'up', name: 'Rueda arriba', fixed: 'Desplazar arriba' },
+  { id: 'down', name: 'Rueda abajo', fixed: 'Desplazar abajo' },
+  { id: 'back', name: 'Lateral trasero', idx: 3 },
+  { id: 'forward', name: 'Lateral delantero', idx: 4 },
+  { id: 'dpi', name: 'Botón DPI', idx: 5 }
 ]
+// Lo que recibe Windows (la ventana), según el número de botón del evento.
 const DOM_BUTTON: Btn[] = ['left', 'wheel', 'right', 'back', 'forward']
+const DOM_NAME: Record<string, string> = { left: 'clic izquierdo', wheel: 'clic central', right: 'clic derecho', back: 'atrás', forward: 'adelante' }
 
 export function ButtonsView({ s }: { s: Shared }): React.JSX.Element {
   const [hit, setHit] = useState<Set<Btn>>(new Set())
   const [log, setLog] = useState<string[]>([])
   const timers = useRef<Record<string, number>>({})
+  // Mapa de botones: lo grabado en el ratón y lo que se está editando.
+  const [stored, setStored] = useState<number[] | null>(null)
+  const [codes, setCodes] = useState<number[] | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
+
+  useEffect(() => {
+    if (!s.device.connected) return
+    void window.isy.getButtons().then((r) => {
+      if (!r.ok) return setMsg({ ok: false, text: r.error })
+      setStored(r.codes)
+      setCodes(r.codes)
+    })
+  }, [s.device.connected])
+
+  async function save(next: number[]): Promise<void> {
+    setBusy(true)
+    setMsg(null)
+    const r = await window.isy.setButtons(next)
+    setBusy(false)
+    if (!r.ok) return setMsg({ ok: false, text: r.error })
+    setStored(r.codes)
+    setCodes(r.codes)
+    setMsg({ ok: true, text: 'Botones grabados en el ratón: funcionan en cualquier PC, sin la app.' })
+  }
+  const pending = !!codes && !!stored && codes.join() !== stored.join()
+  const noLeft = !!codes && !codes.includes(0x01)
 
   const flash = (b: Btn, text: string, ms = 0): void => {
     setHit((h) => new Set(h).add(b))
@@ -34,7 +65,7 @@ export function ButtonsView({ s }: { s: Shared }): React.JSX.Element {
   useEffect(() => {
     const down = (e: globalThis.MouseEvent): void => {
       const b = DOM_BUTTON[e.button]
-      if (b) flash(b, `${ROWS.find((r) => r.id === b)!.name} pulsado`)
+      if (b) flash(b, `Windows recibe: ${DOM_NAME[b]}`)
       if (e.button > 2) e.preventDefault()
     }
     const up = (e: globalThis.MouseEvent): void => {
@@ -72,7 +103,10 @@ export function ButtonsView({ s }: { s: Shared }): React.JSX.Element {
       <div className="head">
         <div>
           <h2>Botones</h2>
-          <p>Pulsa cualquier botón del ratón con la ventana delante: se marca en el dibujo y en la tabla. Sirve para comprobar que todos funcionan.</p>
+          <p>
+            Elige qué hace cada botón y grábalo en el ratón: funciona en cualquier PC, sin la app. Abajo puedes probarlos: el registro
+            enseña lo que recibe Windows al pulsar.
+          </p>
         </div>
       </div>
       <div className="btnmap">
@@ -93,31 +127,57 @@ export function ButtonsView({ s }: { s: Shared }): React.JSX.Element {
         <div className="col">
           <table>
             <thead>
-              <tr><th>Botón</th><th>Qué hace</th><th>Lo gestiona</th></tr>
+              <tr><th>Botón</th><th>Función</th></tr>
             </thead>
             <tbody>
               {ROWS.map((r) => (
                 <tr key={r.id} className={hit.has(r.id) ? 'hit' : ''} data-btn={r.id}>
-                  <td>{r.name}</td><td>{r.does}</td><td className="small">{r.how}</td>
+                  <td>{r.name}</td>
+                  <td>
+                    {r.idx === undefined ? (
+                      <span className="muted">{r.fixed}</span>
+                    ) : (
+                      <select
+                        className="fnsel"
+                        value={codes?.[r.idx] ?? ''}
+                        disabled={!codes || busy}
+                        onChange={(e) => codes && setCodes(codes.map((c, i) => (i === r.idx ? +e.target.value : c)))}
+                      >
+                        {!codes && <option value="">—</option>}
+                        {codes && !functionOf(codes[r.idx]) && <option value={codes[r.idx]}>Otra (0x{codes[r.idx].toString(16)})</option>}
+                        {FUNCTIONS.map((f) => <option key={f.code} value={f.code}>{f.name}</option>)}
+                      </select>
+                    )}
+                  </td>
                 </tr>
               ))}
               <tr>
-                <td>Botón de modos (debajo)</td><td>Cambia el efecto de luz en el propio ratón</td><td className="small">Firmware</td>
+                <td>Botón de modos (debajo)</td><td className="muted">Cambia el efecto de luz (no se puede reasignar)</td>
               </tr>
             </tbody>
           </table>
+          <div className="row">
+            <button className="btn primary" disabled={!pending || noLeft || busy || !s.device.connected} onClick={() => codes && void save(codes)}>
+              {busy ? 'Grabando…' : 'Grabar botones en el ratón'}
+            </button>
+            <button className="btn" disabled={busy || !stored || stored.join() === FACTORY_BUTTONS.join()} onClick={() => void save(FACTORY_BUTTONS)}>
+              Botones de fábrica
+            </button>
+            {noLeft && <span className="small">Algún botón tiene que quedar como clic izquierdo.</span>}
+            {!noLeft && pending && <span className="small muted">Hay cambios sin grabar.</span>}
+          </div>
+          {msg && <div className={msg.ok ? 'warn' : 'err'}>{msg.text}</div>}
           <div className="testpad">Zona de prueba: haz clic, gira la rueda o usa los laterales aquí</div>
           <div className="log">
             {log.length === 0 ? <div className="muted">Aún no has pulsado nada.</div> : log.map((l, i) => <div key={i}>{l}</div>)}
           </div>
           <section className="box soft">
-            <h3>Reasignar botones</h3>
+            <h3>Qué se puede asignar</h3>
             <p className="small">
-              El mapa de botones ya está localizado en la memoria del ratón (gracias al software oficial de un ratón con el mismo chip),
-              pero aún falta traducir los códigos de cada función. Hasta tenerlo comprobado, la app no lo toca: un error ahí deja el ratón sin
-              clic izquierdo hasta restaurarlo.
+              Solo funciones comprobadas en este ratón: clics, atrás/adelante, cambiar o subir el DPI y desactivar ({BUTTONS.length} botones).
+              Teclas, atajos, multimedia o macros necesitan más investigación y no se ofrecen todavía.
             </p>
-            {!s.device.connected && <p className="small" style={{ marginTop: 6 }}>Conecta el ratón para ver el botón DPI.</p>}
+            {!s.device.connected && <p className="small" style={{ marginTop: 6 }}>Conecta el ratón para ver y cambiar sus botones.</p>}
           </section>
         </div>
       </div>

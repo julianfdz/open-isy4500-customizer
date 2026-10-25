@@ -6,7 +6,7 @@ Software libre para la iluminación del ratón **ISY IGM 4500 WT** (marca propia
 
 - **Color**: estilos predefinidos con un clic, 11 efectos de luz (estático, respiración, respiración multicolor, ola arcoíris, ciclo de espectro, llenar y vaciar, bucle, éxtasis, parpadeo, onda, Star Trek), brillo, velocidad, dirección y color RGB libre.
 - **DPI**: velocidad (200–4800 DPI) y color de cada uno de los 6 niveles, grabado en la memoria del ratón; nivel activo en vivo.
-- **Botones**: prueba en vivo de todos los botones.
+- **Botones**: reasigna los 6 botones (clics, atrás/adelante, cambiar o subir el DPI, desactivar) en la memoria del ratón, y pruébalos en vivo.
 - **CLI `isy4500`** y skill para agentes de IA (`skills/isy4500/SKILL.md`).
 
 Interfaz en español, negro sobre blanco. Windows (también debería funcionar en Linux/macOS con permisos HID, sin probar).
@@ -49,12 +49,14 @@ Sacado del software oficial del **Advance GTA 250** (mismo chip, `30FA:1030`, de
 | Dirección | Contenido |
 |---|---|
 | `0x00` | Cabecera `5A 03 A5` + PID/VID |
-| `0x08`–`0x10[0]` | Mapa de botones (`21 22 23 24 25 26 …` = cada botón con su función). **Escribir aquí sin saber qué se hace deja el ratón sin clic izquierdo.** |
+| `0x08`–`0x10[0]` | Mapa de botones: un byte por botón (izquierdo, derecho, rueda, lateral trasero, lateral delantero, DPI…). Bits 0–4 = función, bits 5–7 = banderas. **Un error aquí deja el ratón sin clic izquierdo.** |
 | `0x10` | DPI: byte 3 = bit 4 del código de cada nivel; bytes 5–7 = 4 bits bajos, dos niveles por byte. Fábrica: códigos 6, 8, 12, 13, 15, 18 |
 | `0x18` | Byte 0 bits 0–2 = nivel de DPI activo; byte 1 = niveles habilitados (`3F`) |
 | `0x20`– | Colores y efecto de fábrica |
 
-Códigos de DPI válidos: los 23 del software oficial (1–24 sin el 11); DPI aproximado = código × 200. La app solo escribe el bloque `0x10`, lo verifica al leerlo de vuelta y lo restaura si no cuadra. No se escribe firmware nunca. La reasignación de botones está localizada pero aún no implementada.
+Códigos de DPI válidos: los 23 del software oficial (1–24 sin el 11); DPI aproximado = código × 200. La app solo escribe el bloque `0x10`, lo verifica al leerlo de vuelta y lo restaura si no cuadra. No se escribe firmware nunca.
+
+Funciones de botón comprobadas en este ratón: `01` clic izquierdo, `02` derecho, `03` central, `04` atrás, `05` adelante, `06` siguiente nivel de DPI, `0B` subir DPI (se para en el máximo), `15` desactivado. Sin confirmar (no se ofrecen): `0C`, `09`, `17` (hace parpadear la luz). La app solo graba los 6 botones físicos, conserva las banderas, exige que quede algún clic izquierdo y restaura si lo leído no cuadra.
 
 `tools/` guarda los scripts de investigación (enumeración, lectura y escritura de la memoria, escucha de eventos, medidor de cuentas del sensor).
 

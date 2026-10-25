@@ -26,6 +26,9 @@ const HELP = `isy4500 · Open ISY4500 Customizer (ratón ISY IGM 4500 WT, USB 30
   isy4500 dpi <valor> --level N       Graba solo el nivel N (1-6).
   isy4500 dpi factory                 Vuelve a los valores de fábrica.
   isy4500 level <N>                   Activa el nivel de DPI N (1-6) sin pulsar el botón.
+  isy4500 buttons                     Función de cada botón (lee la memoria del ratón).
+  isy4500 button <botón> <función>    Reasigna un botón (isy4500 buttons para ver nombres).
+  isy4500 buttons factory             Botones de fábrica.
   isy4500 listen [segundos]           Muestra el nivel de DPI al pulsar el botón (solo lectura).
   isy4500 skill                       Guía completa para agentes de IA.
 
@@ -154,6 +157,40 @@ ${show(codes, -1)}`)
       if (r.changed) mouse.apply(saved.config)
       out({ ok: true, ...r }, r.changed ? `DPI grabado en el ratón:
 ${show(r.codes, -1)}` : 'Sin cambios: el ratón ya tenía esos valores.')
+      break
+    }
+    case 'buttons':
+    case 'button': {
+      const cur = mouse.getButtons().codes
+      const show = (codes) => mouse.BUTTONS.map((b, i) => `  ${b.id.padEnd(10)} → ${mouse.functionOf(codes[i])?.id ?? '0x' + codes[i].toString(16)}`).join('\n')
+      const help = `Botones: ${mouse.BUTTONS.map((b) => b.id).join(', ')}
+Funciones: ${mouse.FUNCTIONS.map((f) => f.id).join(', ')}`
+      if (!rest.length) {
+        out({ codes: cur, buttons: mouse.BUTTONS.map((b, i) => ({ button: b.id, function: mouse.functionOf(cur[i])?.id ?? null })) }, `Botones del ratón:
+${show(cur)}
+
+${help}`)
+        break
+      }
+      let codes
+      if (rest[0] === 'factory') codes = mouse.FACTORY_BUTTONS
+      else {
+        const bi = mouse.BUTTONS.findIndex((b) => b.id === rest[0])
+        const fn = mouse.FUNCTIONS.find((f) => f.id === rest[1])
+        if (bi < 0 || !fn) throw new Error(`Uso: isy4500 button <botón> <función>
+${help}`)
+        codes = cur.map((c, i) => (i === bi ? fn.code : c))
+      }
+      if (dry) {
+        mouse.encodeButtons([0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x35, 0x06], codes)
+        out({ dryRun: true, codes }, `Se grabaría:
+${show(codes)}`)
+        break
+      }
+      const r = mouse.setButtons(codes)
+      if (r.changed) mouse.apply(saved.config)
+      out({ ok: true, ...r }, r.changed ? `Botones grabados en el ratón:
+${show(r.codes)}` : 'Sin cambios.')
       break
     }
     case 'level': {

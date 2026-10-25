@@ -3,13 +3,13 @@
 //   07 18 09 00 DIR_L DIR_H 00 len-1    (grabar)     → espera 2 ms
 //   07 18 00 00 DIR_L DIR_H 00 00       (cierre)
 // El cambio no se aplica hasta desenchufar y enchufar el ratón (lee la configuración al arrancar).
-// 07 18 10 … recarga la configuración al momento (lo manda el software oficial al guardar). Aquí no se usa: reenchufar es
-// más seguro. Ojo: 0x08-0x0F es el MAPA DE BOTONES (21 22 23 24 25 26 = cada botón con su función); el 25/10/2026 escribir
+// --reload: 07 18 10 … recarga la configuración al momento (lo manda el software oficial al guardar); borra la luz de la RAM.
+// Ojo: 0x08-0x0F es el MAPA DE BOTONES (21 22 23 24 25 26 = cada botón con su función); el 25/10/2026 escribir
 // 26 en 0x08 convirtió el clic izquierdo en el botón DPI. Restaurar con la copia de backups/ y reenchufar.
-// Uso: node tools/writemem.js <dirección hex> <bytes hex…> --yes      (sin --yes solo enseña los paquetes)
+// Uso: node tools/writemem.js <dirección hex> <bytes hex…> [--reload] --yes      (sin --yes solo enseña los paquetes)
 const HID = require('node-hid')
 const args = process.argv.slice(2)
-const yes = args.includes('--yes')
+const yes = args.includes('--yes'), reload = args.includes('--reload')
 const [addrHex, ...rest] = args.filter((a) => !a.startsWith('--'))
 const addr = parseInt(addrHex, 16), data = rest.map((b) => parseInt(b, 16))
 if (!(addr >= 8) || data.length < 1 || data.length > 8 || data.some((b) => !(b >= 0 && b <= 255))) {
@@ -32,5 +32,6 @@ pkts.forEach((p) => h.sendFeatureReport(p))
 sleep(4)
 h.sendFeatureReport(commit[0]); sleep(2)
 h.sendFeatureReport(commit[1])
+if (reload) { sleep(2); h.sendFeatureReport([7, 0x18, 0x10, 0, 0, 0, 0, 0]); sleep(5); h.sendFeatureReport([7, 0x18, 0, 0, 0, 0, 0, 0]); sleep(50) }
 h.close()
-console.log(`escrito en 0x${addr.toString(16)}: ${hex(data)} (se aplica al reenchufar el ratón)`)
+console.log(`escrito en 0x${addr.toString(16)}: ${hex(data)} ${reload ? ' + recarga' : ' (se aplica al reenchufar el ratón)'}`)

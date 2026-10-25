@@ -23,6 +23,8 @@ export interface DpiState {
 
 export type DpiResult = { ok: true; state: DpiState } | { ok: false; error: string }
 
+export type ButtonsResult = { ok: true; codes: number[] } | { ok: false; error: string }
+
 export type ApplyResult = { ok: true; packets: string[] } | { ok: false; error: string }
 
 /** Lo que llega del ratón: nivel de DPI o un informe sin interpretar. */
@@ -37,6 +39,8 @@ export interface Api {
   getDpi(): Promise<DpiResult>
   setDpi(codes: number[]): Promise<DpiResult>
   setLevel(level: number): Promise<DpiResult>
+  getButtons(): Promise<ButtonsResult>
+  setButtons(codes: number[]): Promise<ButtonsResult>
   appInfo(): Promise<{ version: string; cli: string }>
   onDevice(cb: (d: Device) => void): () => void
   onMouse(cb: (e: MouseEvent) => void): () => void

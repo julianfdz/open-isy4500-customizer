@@ -41,3 +41,12 @@ export const FACTORY_DPI: number[]
 export function dpiOf(code: number): number
 export function decodeDpi(block: ArrayLike<number>): number[]
 export function encodeDpi(block: ArrayLike<number>, codes: number[]): number[]
+export interface ButtonDef { id: string; name: string }
+export interface FunctionDef { id: string; name: string; code: number }
+export const BUTTON_BLOCK: number
+export const BUTTONS: ButtonDef[]
+export const FUNCTIONS: FunctionDef[]
+export const FACTORY_BUTTONS: number[]
+export function functionOf(code: number): FunctionDef | null
+export function decodeButtons(block: ArrayLike<number>): number[]
+export function encodeButtons(block: number[], codes: number[]): number[]

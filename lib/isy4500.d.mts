@@ -24,3 +24,5 @@ export interface DpiState {
 export function getDpi(): DpiState
 export function setDpi(codes: number[], opts?: { applyNow?: boolean }): { changed: boolean; codes: number[]; before?: string; after?: string }
 export function setActiveLevel(level: number): { changed: boolean; active: number }
+export function getButtons(): { codes: number[]; block: string }
+export function setButtons(codes: number[]): { changed: boolean; codes: number[]; before?: string; after?: string }

@@ -145,6 +145,23 @@ function registerIpc(): void {
       return { ok: false, error: (e as Error).message }
     }
   })
+  ipcMain.handle('getButtons', () => {
+    try {
+      return { ok: true, codes: mouse.getButtons().codes }
+    } catch (e) {
+      return { ok: false, error: (e as Error).message }
+    }
+  })
+  // Graba el mapa de botones en el ratón (con las salvaguardas de la librería) y vuelve a mandar la luz.
+  ipcMain.handle('setButtons', (_e, codes: number[]) => {
+    try {
+      const r = mouse.setButtons(codes)
+      if (r.changed) apply(readSaved().config)
+      return { ok: true, codes: r.codes }
+    } catch (e) {
+      return { ok: false, error: (e as Error).message }
+    }
+  })
   ipcMain.handle('appInfo', () => ({
     version: app.getVersion(),
     cli: app.isPackaged ? join(dirname(process.execPath), 'cli') : join(app.getAppPath(), 'bin')
