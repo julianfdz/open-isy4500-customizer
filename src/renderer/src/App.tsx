@@ -4,13 +4,15 @@ import type { Device, LightConfig, MouseEvent, Saved } from '@shared/types'
 import { ColorView } from '@/views/ColorView'
 import { DpiView } from '@/views/DpiView'
 import { ButtonsView } from '@/views/ButtonsView'
+import { KeyboardView } from '@/views/KeyboardView'
 import logo from './logobuho.png'
 
-type ViewId = 'color' | 'dpi' | 'botones'
+type ViewId = 'color' | 'dpi' | 'botones' | 'teclado'
 const VIEWS: { id: ViewId; name: string }[] = [
   { id: 'color', name: 'Color' },
   { id: 'dpi', name: 'DPI' },
-  { id: 'botones', name: 'Botones' }
+  { id: 'botones', name: 'Botones' },
+  { id: 'teclado', name: 'Teclado' }
 ]
 
 /** Estado común a las tres vistas. */
@@ -94,7 +96,7 @@ export default function App(): React.JSX.Element {
       <div className="titlebar">
         <img src={logo} alt="" />
         <b>Open ISY4500 Customizer</b>
-        <span>ISY IGM 4500 WT · luz · DPI · botones</span>
+        <span>ratón ISY IGM 4500 WT · teclado RGB</span>
       </div>
       <nav className="nav">
         {VIEWS.map((v, i) => (
@@ -120,6 +122,7 @@ export default function App(): React.JSX.Element {
         {view === 'color' && <ColorView s={shared} />}
         {view === 'dpi' && <DpiView s={shared} />}
         {view === 'botones' && <ButtonsView s={shared} />}
+        {view === 'teclado' && <KeyboardView />}
       </main>
       <footer className="status">
         <span><span className={`dot ${device.connected ? 'ok' : ''}`} />{device.connected ? 'Ratón conectado' : 'Ratón no encontrado'}</span>

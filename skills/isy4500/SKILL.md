@@ -27,6 +27,11 @@ isy4500 level 3                      # activa el nivel 3 sin pulsar el botón
 isy4500 buttons                      # función de cada botón
 isy4500 button trasero ciclo-dpi     # reasigna un botón (botones: izquierdo, derecho, rueda, trasero, delantero, dpi)
 isy4500 buttons factory              # botones de fábrica
+isy4500 kb                           # teclado Sino Wealth: efectos, colores, plantillas
+isy4500 kb effect arcoiris --brightness 4   # efecto del teclado
+isy4500 kb keys buho                 # plantilla tecla a tecla (buho, atardecer, oceano, fuego, vaporwave, aurora, matrix, programador…)
+isy4500 kb text HOLA --fg "#ff5a00" # texto con teclas (hasta 5 letras; mejor encendido sobre fondo apagado)
+isy4500 kb restore                   # teclado a estático rojo
 isy4500 listen 20                    # nivel de DPI en vivo al pulsar el botón (solo lectura)
 ```
 
@@ -41,4 +46,5 @@ Velocidad 0-5, brillo 0-7 (7 = máximo), dirección 0/1.
 - Los valores de DPI son aproximados (código × 200). Usa `--dry-run` antes si dudas.
 - Funciones de botón: izquierdo, derecho, central, atras, adelante, ciclo-dpi, dpi-mas, desactivado. Siempre tiene que quedar un clic izquierdo (el CLI lo exige).
 - No inventes comandos ni escribas la memoria del ratón por otras vías: un error deja el ratón sin clic.
+- El teclado solo admite luz. Para plantillas y texto con su distribución real hay que calibrarlo una vez en la app (vista Teclado); el CLI usa la distribución de ejemplo.
 - Si dice «Ratón no encontrado», pide al usuario que lo conecte; no hay nada más que hacer.

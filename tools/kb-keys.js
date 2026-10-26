@@ -1,0 +1,12 @@
+// Prueba de color por tecla del teclado Sino Wealth 258A:0090 (modo personalizado 0x13 de OpenRGB). Solo iluminación.
+const HID = require('node-hid')
+const KEYS = [["ESCAPE",0x01],["F1",0x03],["F2",0x04],["F3",0x05],["F4",0x06],["F5",0x07],["F6",0x08],["F7",0x09],["F8",0x0A],["F9",0x0B],["F10",0x0C],["F11",0x0D],["F12",0x0F],["PRINT_SCREEN",0x10],["SCROLL_LOCK",0x11],["PAUSE_BREAK",0x12],["BACK_TICK",0x18],["1",0x19],["2",0x1A],["3",0x1B],["4",0x1C],["5",0x1D],["6",0x1E],["7",0x1F],["8",0x20],["9",0x21],["0",0x22],["MINUS",0x23],["EQUALS",0x24],["BACKSPACE",0x26],["INSERT",0x27],["HOME",0x28],["PAGE_UP",0x29],["NUMPAD_LOCK",0x2A],["NUMPAD_DIVIDE",0x2B],["NUMPAD_TIMES",0x2C],["NUMPAD_MINUS",0x2D],["TAB",0x2F],["Q",0x30],["W",0x31],["E",0x32],["R",0x33],["T",0x34],["Y",0x35],["U",0x36],["I",0x37],["O",0x38],["P",0x39],["LEFT_BRACKET",0x3A],["RIGHT_BRACKET",0x3B],["DELETE",0x3E],["END",0x3F],["PAGE_DOWN",0x40],["NUMPAD_7",0x41],["NUMPAD_8",0x42],["NUMPAD_9",0x43],["CAPS_LOCK",0x46],["A",0x47],["S",0x48],["D",0x49],["F",0x4A],["G",0x4B],["H",0x4C],["J",0x4D],["K",0x4E],["L",0x4F],["SEMICOLON",0x50],["QUOTE",0x51],["ANSI_BACK_SLASH",0x52],["ANSI_ENTER",0x54],["NUMPAD_4",0x58],["NUMPAD_5",0x59],["NUMPAD_6",0x5A],["NUMPAD_PLUS",0x44],["LEFT_SHIFT",0x5D],["Z",0x5F],["X",0x60],["C",0x61],["V",0x62],["B",0x63],["N",0x64],["M",0x65],["COMMA",0x66],["PERIOD",0x67],["FORWARD_SLASH",0x68],["RIGHT_SHIFT",0x6B],["UP_ARROW",0x6D],["NUMPAD_1",0x6F],["NUMPAD_2",0x70],["NUMPAD_3",0x71],["LEFT_CONTROL",0x74],["LEFT_WINDOWS",0x75],["LEFT_ALT",0x76],["SPACE",0x79],["RIGHT_ALT",0x7C],["RIGHT_FUNCTION",0x7D],["MENU",0x7E],["RIGHT_CONTROL",0x80],["LEFT_ARROW",0x83],["DOWN_ARROW",0x84],["RIGHT_ARROW",0x85],["NUMPAD_0",0x86],["NUMPAD_PERIOD",0x88],["NUMPAD_ENTER",0x72]]
+const d = HID.devices().find((x) => x.vendorId === 0x258a && x.productId === 0x0090 && x.usagePage === 0xff00 && x.usage === 2)
+const h = new HID.HID(d.path)
+const send = (...a) => { const p = [0x0a, ...a]; while (p.length < 8) p.push(0); h.sendFeatureReport(p) }
+const color = { ESCAPE: [255, 0, 0], W: [0, 120, 255], A: [0, 120, 255], S: [0, 120, 255], D: [0, 120, 255] }
+send(0x03, 0x01); send(0x0a, 0x13, 0x04, 0x02, 0x07)
+for (const [name, idx] of KEYS) { const [r, g, b] = color[name] || [0, 0, 0]; send(0x0c, 0x01, idx, r, g, b) }
+send(0x0c, 0x01, 0x89, 0, 0, 0)
+h.close()
+console.log('enviadas', KEYS.length, 'teclas')

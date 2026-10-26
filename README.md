@@ -7,6 +7,7 @@ Software libre para la iluminación del ratón **ISY IGM 4500 WT** (marca propia
 - **Color**: estilos predefinidos con un clic, 11 efectos de luz (estático, respiración, respiración multicolor, ola arcoíris, ciclo de espectro, llenar y vaciar, bucle, éxtasis, parpadeo, onda, Star Trek), brillo, velocidad, dirección y color RGB libre.
 - **DPI**: velocidad (200–4800 DPI) y color de cada uno de los 6 niveles, grabado en la memoria del ratón; nivel activo en vivo.
 - **Botones**: reasigna los 6 botones (clics, atrás/adelante, cambiar o subir el DPI, desactivar) en la memoria del ratón, y pruébalos en vivo.
+- **Teclado**: teclados RGB con chip Sino Wealth (`258A:0090`): 19 efectos, color tecla a tecla, plantillas, texto con teclas y **calibración** para cualquier distribución. Solo luz.
 - **CLI `isy4500`** y skill para agentes de IA (`skills/isy4500/SKILL.md`).
 
 Interfaz en español, negro sobre blanco. Windows (también debería funcionar en Linux/macOS con permisos HID, sin probar).
@@ -60,6 +61,17 @@ Funciones de botón comprobadas en este ratón: `01` clic izquierdo, `02` derech
 
 `tools/` guarda los scripts de investigación (enumeración, lectura y escritura de la memoria, escucha de eventos, medidor de cuentas del sensor).
 
+## Teclado Sino Wealth (258A:0090)
+
+Mismo chip que OpenRGB soporta como *Genesis Thor 300* ([SinowealthKeyboard90Controller](https://gitlab.com/CalcProgrammer1/OpenRGB/-/tree/master/Controllers/SinowealthController/SinowealthKeyboard90Controller)). Feature reports de 8 bytes con report ID `0x0A` (interfaz 1, usage page `0xFF00`, usage 2), solo escritura y **solo luz**:
+
+| Qué | Paquetes |
+|---|---|
+| Efecto | `0A 03 01` → `0A 0A MODO BRILLO(0-4) VELOCIDAD(0-4) COLOR(0-7)` |
+| Tecla a tecla | modo `0x13`, luego `0A 0C 01 LED R G B` por tecla y `0A 0C 01 89` para aplicar |
+
+El número de LED codifica su sitio en la matriz del firmware (LED = fila × 23 + columna + 1), pero cada fabricante coloca las teclas a su manera. Por eso la app tiene un **asistente de calibración**: enciende un LED cada vez y el usuario pulsa la tecla iluminada. Con eso se dibuja su distribución real y las plantillas y el texto caen donde deben. El texto (hasta 5 letras de 3×4) evita Bloq Num, porque su luz de estado tapa el color, y tiene en cuenta que el 0 del numérico es ancho. En un teclado el negro es «luz apagada»: el texto se lee mejor encendido sobre fondo apagado.
+
 ## Créditos y licencia
 
-Protocolo descubierto por el proyecto [OpenRGB](https://openrgb.org) (Morgan Guimard y colaboradores); este proyecto lo reimplementa desde cero en JavaScript. Código bajo licencia MIT. Hecho por Buho Corps Systems. No está afiliado a ISY, Imtron, MediaMarkt ni Instant Microelectronics.
+Protocolos descubiertos por el proyecto [OpenRGB](https://openrgb.org) (Morgan Guimard y colaboradores) y, para la memoria del ratón, a partir del software oficial del Advance GTA 250; este proyecto lo reimplementa desde cero en JavaScript. Código bajo licencia MIT. Hecho por Buho Corps Systems. No está afiliado a ISY, Imtron, MediaMarkt ni Instant Microelectronics.

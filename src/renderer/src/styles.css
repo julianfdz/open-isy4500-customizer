@@ -153,3 +153,15 @@ tr.hit td { background: #000; color: #fff; }
 .dpisel { display: block; width: 100%; margin-top: 2px; border: 1px solid var(--fg); background: var(--bg); padding: 4px 6px; border-radius: 0; }
 .fnsel { border: 1px solid var(--fg); background: var(--bg); padding: 3px 6px; border-radius: 0; min-width: 220px; }
 tr.hit .fnsel { color: #000; }
+
+/* Teclado */
+.kbd { --u: 38px; display: flex; flex-direction: column; gap: 5px; overflow-x: auto; padding: 10px; border: 1px solid var(--fg); background: var(--g1); }
+.kbrow { display: flex; gap: 4px; }
+.kbrow:first-child { margin-bottom: 8px; }
+.kkey { flex: none; height: var(--u); border: 1px solid #000; background: #fff; padding: 0; cursor: crosshair; position: relative; font-size: 10.5px; display: grid; place-items: center; box-shadow: inset 0 -7px 0 var(--kc); }
+.kkey span { margin-bottom: 6px; white-space: nowrap; overflow: hidden; max-width: 100%; }
+.kkey:hover { outline: 2px solid #000; outline-offset: 1px; }
+.kbtpl { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
+.kbtpl .strip { height: 16px; }
+.calbar { height: 6px; border: 1px solid #000; }
+.calbar i { display: block; height: 100%; background: #000; }

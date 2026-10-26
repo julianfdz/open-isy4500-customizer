@@ -7,6 +7,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import * as mouse from '../lib/isy4500.mjs'
+import * as kb from '../lib/keyboard.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const dataDir = process.env.ISY_DATA_DIR || join(process.env.APPDATA || join(process.env.HOME || '.', '.config'), 'OpenISY4500Customizer')
@@ -30,6 +31,14 @@ const HELP = `isy4500 · Open ISY4500 Customizer (ratón ISY IGM 4500 WT, USB 30
   isy4500 button <botón> <función>    Reasigna un botón (isy4500 buttons para ver nombres).
   isy4500 buttons factory             Botones de fábrica.
   isy4500 listen [segundos]           Muestra el nivel de DPI al pulsar el botón (solo lectura).
+
+  Teclado RGB Sino Wealth (258A:0090), solo luz:
+  isy4500 kb                          ¿Está conectado? Efectos, colores y estilos.
+  isy4500 kb effect <efecto> [--color c] [--brightness 0-4] [--speed 0-4]
+  isy4500 kb keys <plantilla>         Tecla a tecla: buho, atardecer, oceano, fuego, vaporwave, aurora, matrix, programador,
+                                      wasd, gamer, arcoiris, zonas, blanco, apagado.
+  isy4500 kb text <TEXTO> [--fg #000000] [--bg #ff9900]   Dibuja hasta 5 letras con teclas.
+  isy4500 kb restore                  Vuelve a estático rojo.
   isy4500 skill                       Guía completa para agentes de IA.
 
   --json  salida en JSON · --dry-run  enseña los paquetes sin mandarlos`
@@ -198,6 +207,53 @@ ${show(r.codes)}` : 'Sin cambios.')
       if (r.changed) mouse.apply(saved.config)
       out({ ok: true, ...r }, `Nivel de DPI activo: ${r.active + 1} (${mouse.dpiOf(mouse.getDpi().codes[r.active])} DPI)`)
       break
+    }
+    case 'kb': {
+      const [sub, arg] = rest
+      if (!sub) {
+        const info = kb.findKeyboard()
+        out(
+          { connected: !!info, device: info, modes: kb.KB_MODES, colors: kb.KB_COLORS.map((c) => c.id), presets: kb.KB_PRESETS.map((p) => p.id) },
+          `${info ? `Teclado conectado: ${info.product} (${info.manufacturer})` : 'Teclado no encontrado (USB 258A:0090).'}\n` +
+            `Efectos: ${kb.KB_MODES.filter((m) => !m.custom).map((m) => m.id).join(', ')}\n` +
+            `Colores: ${kb.KB_COLORS.map((c) => c.id).join(', ')}\nEstilos de teclas: ${kb.KB_PRESETS.map((p) => p.id).join(', ')}`
+        )
+        break
+      }
+      if (sub === 'restore') {
+        if (!dry) kb.restoreKb()
+        out({ ok: true, ...kb.KB_RESTORE }, 'Teclado restaurado: estático rojo.')
+        break
+      }
+      if (sub === 'effect') {
+        const effect = {
+          mode: kb.kbModeById(arg).id,
+          color: flag('color') ?? 'arcoiris',
+          brightness: Number(flag('brightness') ?? 4),
+          speed: Number(flag('speed') ?? 2)
+        }
+        if (dry) out({ dryRun: true, packets: kb.kbModePackets(effect).map(mouse.hex) }, kb.kbModePackets(effect).map(mouse.hex).join('\n'))
+        else {
+          kb.setKbEffect(effect)
+          out({ ok: true, effect }, `Teclado: ${kb.kbModeById(effect.mode).name}`)
+        }
+        break
+      }
+      if (sub === 'keys') {
+        const tpl = kb.KB_TEMPLATES.find((t) => t.id === arg)
+        const ids = [...kb.KB_TEMPLATES.map((t) => t.id), ...kb.KB_PRESETS.map((p) => p.id)]
+        if (!tpl && !kb.KB_PRESETS.some((p) => p.id === arg)) throw new Error(`Plantilla desconocida: ${arg}. Plantillas: ${ids.join(', ')}`)
+        if (!dry) kb.setKbKeys(tpl ? tpl.colors() : kb.kbPreset(arg), Number(flag('brightness') ?? 4))
+        out({ ok: true, template: arg }, `Teclado: plantilla «${arg}»${dry ? ' (simulación)' : ''}`)
+        break
+      }
+      if (sub === 'text') {
+        const r = kb.kbText(arg ?? '', flag('fg') ?? '#000000', flag('bg') ?? '#ff9900')
+        if (!dry) kb.setKbKeys(r.colors, Number(flag('brightness') ?? 4))
+        out({ ok: true, text: arg, lost: r.lost, total: r.total }, `Teclado: «${arg}» dibujado${r.lost ? ` (${r.lost} de ${r.total} puntos en huecos)` : ''}${dry ? ' (simulación)' : ''}`)
+        break
+      }
+      throw new Error('Uso: isy4500 kb [effect <efecto> | keys <plantilla> | text <TEXTO> | restore]')
     }
     case 'off':
       send({ ...saved.config, mode: 'off' })

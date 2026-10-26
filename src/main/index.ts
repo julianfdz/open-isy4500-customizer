@@ -2,7 +2,8 @@ import { app, BrowserWindow, ipcMain, shell } from 'electron'
 import { existsSync, mkdirSync, readFileSync, watchFile, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import * as mouse from '../../lib/isy4500.mjs'
-import type { Device, LightConfig, Saved } from '@shared/types'
+import * as kb from '../../lib/keyboard.mjs'
+import type { Device, KbSaved, LightConfig, Saved } from '@shared/types'
 
 /**
  * Open ISY4500 Customizer (Buho Corps Systems): luz RGB del ratón ISY IGM 4500 WT.
@@ -14,6 +15,7 @@ app.setPath('userData', process.env.ISY_DATA_DIR || join(app.getPath('appData'),
 let win: BrowserWindow | null = null
 let device: Device = { connected: false }
 let stopListening: (() => void) | null = null
+let keyboard: { connected: boolean; product?: string } = { connected: false }
 
 const settingsFile = (): string => join(app.getPath('userData'), 'settings.json')
 const DEFAULT_SAVED: Saved = { config: mouse.DEFAULT_CONFIG, reapplyOnStart: false }
@@ -35,6 +37,19 @@ function writeSaved(s: Saved): void {
 }
 
 const send = (channel: string, v: unknown): void => win?.webContents.send(channel, v)
+
+/** El teclado Sino Wealth: solo se avisa a la ventana cuando se conecta o desconecta. */
+function pollKeyboard(): void {
+  let info: ReturnType<typeof kb.findKeyboard> = null
+  try {
+    info = kb.findKeyboard()
+  } catch {
+    /* hid ocupado un instante */
+  }
+  if (!!info === keyboard.connected) return
+  keyboard = info ? { connected: true, product: info.product } : { connected: false }
+  send('kb', keyboard)
+}
 
 /** Busca el ratón cada 2 s: detecta cuando se conecta o desconecta y escucha sus eventos. */
 function pollDevice(): void {
@@ -162,6 +177,36 @@ function registerIpc(): void {
       return { ok: false, error: (e as Error).message }
     }
   })
+  ipcMain.handle('kbStatus', () => keyboard)
+  // Luz del teclado (solo iluminación): efecto del firmware o tecla a tecla; se guarda para la próxima vez.
+  ipcMain.handle('kbApply', (_e, k: KbSaved) => {
+    try {
+      if (k.perKey) kb.setKbKeys(k.keys, k.effect.brightness, k.calibration?.length ? kb.kbKeysFromCalibration(k.calibration) : undefined)
+      else kb.setKbEffect(k.effect)
+      writeSaved({ ...readSaved(), keyboard: k })
+      return { ok: true }
+    } catch (e) {
+      return { ok: false, error: (e as Error).message }
+    }
+  })
+  const kbTry = (fn: () => unknown): { ok: true } | { ok: false; error: string } => {
+    try {
+      fn()
+      return { ok: true }
+    } catch (e) {
+      return { ok: false, error: (e as Error).message }
+    }
+  }
+  ipcMain.handle('kbCalibStart', () => kbTry(() => kb.kbCalibStart()))
+  ipcMain.handle('kbCalibStep', (_e, prev: number | null, cur: number | null) => kbTry(() => kb.kbCalibStep(prev, cur)))
+  ipcMain.handle('kbRestore', () => {
+    try {
+      kb.restoreKb()
+      return { ok: true }
+    } catch (e) {
+      return { ok: false, error: (e as Error).message }
+    }
+  })
   ipcMain.handle('appInfo', () => ({
     version: app.getVersion(),
     cli: app.isPackaged ? join(dirname(process.execPath), 'cli') : join(app.getAppPath(), 'bin')
@@ -178,7 +223,11 @@ else {
     registerIpc()
     createWindow()
     pollDevice()
-    setInterval(pollDevice, 2000)
+    pollKeyboard()
+    setInterval(() => {
+      pollDevice()
+      pollKeyboard()
+    }, 2000)
     const s = readSaved()
     if (s.reapplyOnStart && device.connected) apply(s.config)
     // Cambios hechos por el CLI mientras la ventana está abierta.
